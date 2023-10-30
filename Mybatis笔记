@@ -1,0 +1,501 @@
+# Mybaits
+
+SSM框架：配置文件，学习看官网文档
+
+Mybatis官网：https://mybatis.net.cn/index.html
+
+## 1.简介
+
+![img.png](img.png)
+
+### 1.1什么是Mybatis
+
+- Mybatis是一款优秀的**持久层框架**
+- 它支持自定义SQL、存储过程以及高级映射
+- Mybatis免除了几乎所有的JDBC代码以及设置参数和获取结果集的工作
+- Mybatis可以通过简单的XML或者注解来配置和映射原始类型、接口和Java POJO为数据库中的记录
+- Mybatis本事apache的一个开源项目iBatis，2010年项目有apache software foundation 迁移到google code，并且改名为Mybatis。
+- 2013年11月迁移至Github
+
+**Maven仓库** ：https://mvnrepository.com/artifact/org.mybatis/mybatis
+
+```xml
+<!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.5.2</version>
+</dependency>
+
+```
+
+### 1.2持久层
+
+数据持久化
+
+- 持久化：将长须的书在持久状态下和瞬时状态下转化的过程
+- 内存：**断电即失**
+- 数据库（jdbc），io文件持久化
+- 生活中：冰箱的冷藏、密封罐头……
+
+**为什么需要持久化**
+
+- 有些对象，不能让它丢失。
+- 内存的价格昂贵
+
+### 1.3 持久层
+
+Dao层、Service层、Controller层
+
+- 完成持久化工作的代码块
+- 层界限十分明显
+
+### 1.4 为什么需要Mybatis？
+
+- 帮助程序员将数据存入到数据库中
+- 方便好用
+- 传统的JDBC代码太复杂。简化，框架，自动化
+- 不用Mybatis也可以实现。更容易上手
+- 优点：
+    - 简单易学
+    - 灵活
+    - sql和代码得分离，提高了可维护性。
+    - 提供支持对象与数据库ORM字段关系映射
+    - 提供对象关系映射标签，支持对象关系组建维护
+    - 提供xml标签，支持编写动态sql
+
+**好用，用的人多**
+
+## 2.Mybatis入门程序
+
+思路: 搭建环境-- 导入Mybatis-- 编写代码-- 测试！
+
+### 2.1搭建环境
+
+**数据库**
+
+```
+CREATE DATABASE `mybatis`;
+        USE `mybatis`;
+
+        CREATE TABLE `user`(
+        `id` INT(20)NOT NULL PRIMARY KEY,
+        `name` VARCHAR(30)DEFAULT NULL,
+        `pwd` VARCHAR(30)DEFAULT NULL
+        )ENGINE=INNODB DEFAULT CHARSET=utf8;
+
+        INSERT INTO `user`(`id`,`name`,`pwd`)VALUES
+        (1,'狂神','123456'),
+        (2,'张三','123456'),
+        (3,'李四','123890')
+
+```
+
+**导入Mybatis依赖**
+
+```xml
+
+<dependencies>
+    <!--Mybatis-->
+    <dependency>
+        <groupId>org.mybatis</groupId>
+        <artifactId>mybatis</artifactId>
+        <version>3.5.13</version>
+    </dependency>
+    <!--Mysql-->
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>5.1.47</version>
+    </dependency>
+    <!--Junit-->
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+    </dependency>
+    <!--lombok-->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.30</version>
+    </dependency>
+</dependencies>
+```
+
+**编写代码**
+
+- mybatis-config.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.jdbc.Driver"/>
+                <property name="url"
+                          value="jdbc:mysql://localhost:3306/mybatis?useSSL=false&amp;useUnicode=true&amp;characterEncoding=utf-8"/>
+                <property name="username" value="root"/>
+                <property name="password" value="root"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <mappers>
+        <mapper resource="com/shisan/mapper/UserMapper.xml"/>
+    </mappers>
+</configuration>
+```
+
+- MybatisUtils工具类
+
+```java
+import org.apache.ibatis.io.Resources;
+import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 7:53
+ */
+// sqlSessionFactory --> sqlSession
+public class MybatisUtils {
+    private static SqlSessionFactory sqlSessionFactory;
+
+    static {
+        try {
+            // 使用Mybatis：获取sqlSessionFactory对象
+            String resource = "mybatis-config.xml";
+            InputStream inputStream = Resources.getResourceAsStream(resource);
+            sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static SqlSession getSqlSession() {
+        return sqlSessionFactory.openSession();
+    }
+}
+
+```
+
+- 实体类User
+
+```java
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 8:00
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+    private Integer id;
+    private String name;
+    private String password;
+}
+```
+
+- UserMapper
+
+```java
+import java.util.List;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 8:01
+ */
+public interface UserMapper {
+    List<User> findAll();
+}
+```
+
+- UserMapper.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--namespace=绑定一个对应的Dao/Mapper接口-->
+<mapper namespace="com.shisan.mapper.UserMapper">
+    <!--select查询语句-->
+    <select id="findAll" resultType="com.shisan.pojo.User">
+        select *
+        from `user`
+    </select>
+
+</mapper>
+
+```
+
+- 测试类
+
+```java
+import com.shisan.pojo.User;
+import com.shisan.utils.MybatisUtils;
+import org.apache.ibatis.session.SqlSession;
+import org.junit.Test;
+
+import java.util.List;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 10:22
+ */
+public class UserMapperTest {
+    @Test
+    // 方式一：
+    public void findAll() {
+        //获取SqlSession对象
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        // getMapper
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+
+        // 查询全部
+        List<User> userList = mapper.findAll();
+        for (User user : userList) {
+            System.out.println(user);
+        }
+
+        // 关闭SQLSession
+        sqlSession.close();
+    }
+}
+```
+
+## 3.CRUD
+
+**namespace**
+
+namespaced中的报名和Mapper接口的包名一致
+![img_1.png](img_1.png)
+
+- 标签说明
+    - id：对应的namespace中的方法
+    - resultType:SQL语句执行的返回值
+    - parameterType：参数类型
+
+
+- 接口文档：
+
+```java
+import com.shisan.pojo.User;
+
+import java.util.List;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 8:01
+ */
+public interface UserMapper {
+    List<User> findAll();
+
+    User findById(Integer id);
+
+    Integer add(User user);
+
+    Integer update(User user);
+
+    Integer deleteById(Integer id);
+
+}
+```
+
+- sql语句
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--namespace=绑定一个对应的Dao/Mapper接口-->
+<mapper namespace="com.shisan.mapper.UserMapper">
+
+    <!--新增用户-->
+    <insert id="add">
+        insert into USER (id, name, password)
+        values (#{id}, #{name}, #{password});
+    </insert>
+
+    <!--更新用户信息-->
+    <update id="update">
+        update user
+        set name = #{name},
+        password = #{password}
+        where id = #{id};
+    </update>
+
+    <!--根据id删除-->
+    <delete id="deleteById">
+        delete
+        from user
+        where id = #{id};
+    </delete>
+
+    <!--select查询语句-->
+    <select id="findAll" resultType="com.shisan.pojo.User">
+        select *
+        from `user`
+    </select>
+    <!--根据id查询-->
+    <select id="findById" resultType="com.shisan.pojo.User">
+        select *
+        from user
+        where id = #{id};
+    </select>
+
+</mapper>
+
+```
+
+- 测试
+
+```java
+import com.shisan.pojo.User;
+import com.shisan.utils.MybatisUtils;
+import org.apache.ibatis.session.SqlSession;
+import org.junit.Test;
+
+import java.util.List;
+
+/**
+ * @Author:shisan
+ * @Date:2023/10/30 10:22
+ */
+public class UserMapperTest {
+    @Test
+    // 方式一：
+    public void findAll() {
+        //获取SqlSession对象
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+
+        // getMapper
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+
+        // 查询全部
+        List<User> userList = mapper.findAll();
+        for (User user : userList) {
+            System.out.println(user);
+        }
+
+        // 关闭SQLSession
+        sqlSession.close();
+    }
+
+    @Test
+    public void add() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        // 新增用户
+        User user = new User(null, "王五", "wang123");
+
+        Integer add = mapper.add(user);
+        if (add > 0) {
+            System.out.println("添加成功！");
+        }
+        sqlSession.commit();
+
+        sqlSession.close();
+    }
+
+    @Test
+    public void deleteById() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        // 根据id删除用户
+        Integer deleteById = mapper.deleteById(6);
+        if (deleteById > 0) {
+            System.out.println("操作成功！");
+        }
+        sqlSession.close();
+    }
+
+    @Test
+    public void update() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+        // 修改用户
+        User user = new User(3, "xl", "240330");
+        Integer update = mapper.update(user);
+        if (update > 0) {
+            System.out.println("操作成功！");
+        }
+        sqlSession.commit();
+        sqlSession.close();
+    }
+
+    @Test
+    public void selectById() {
+        SqlSession sqlSession = MybatisUtils.getSqlSession();
+        UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+
+        // 根据id查询 id = 1
+        User user = mapper.findById(1);
+        System.out.println(user);
+
+        sqlSession.close();
+    }
+}
+```
+
+**注意点**：
+
+- 增删改需要提交事务
+
+**模糊查询**
+
+- UserMapper.xml
+
+```xml
+
+<select id="findLike" resultType="com.shisan.pojo.User">
+    select *
+    from user
+    where name like concat("%", #{name}, "%");
+</select>
+```
+
+- 注意：使用concat拼接的方法防止sql注入
+
+- test
+
+```
+@Test
+public void findLike(){
+        SqlSession sqlSession=MybatisUtils.getSqlSession();
+        UserMapper mapper=sqlSession.getMapper(UserMapper.class);
+
+        // 根据name 模糊匹配
+        List<User> users=mapper.findLike("shisan");
+        for(User user:users){
+        System.out.println(user);
+
+        }
+
+        sqlSession.close();
+ }
+```
+
+
+
+
+

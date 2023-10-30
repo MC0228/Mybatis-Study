@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--namespace=绑定一个对应的Dao/Mapper接口-->
+<mapper namespace="com.shisan.mapper.UserMapper">
+
+    <!--新增用户-->
+    <insert id="add">
+        insert into USER (id, name, password)
+        values (#{id}, #{name}, #{password});
+    </insert>
+
+    <!--更新用户信息-->
+    <update id="update">
+        update user
+        set name     = #{name},
+            password = #{password}
+        where id = #{id};
+    </update>
+
+    <!--根据id删除-->
+    <delete id="deleteById">
+        delete
+        from user
+        where id = #{id};
+    </delete>
+
+    <!--select查询语句-->
+    <select id="findAll" resultType="com.shisan.pojo.User">
+        select *
+        from `user`
+    </select>
+    <!--根据id查询-->
+    <select id="findById" resultType="com.shisan.pojo.User">
+        select *
+        from user
+        where id = #{id};
+    </select>
+    <select id="findLike" resultType="com.shisan.pojo.User">
+        select *
+        from user
+        where name like concat("%", #{name}, "%");
+    </select>
+
+</mapper>
