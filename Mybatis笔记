@@ -673,4 +673,43 @@ MapperRegistry：注册绑定我们的mapper文件
 
 每一个Mapper，就代表一个具体的业务！
 
+## 5.解决属性名和字段名不一致问题
 
+**1.问题**
+
+字段名
+![img_4.png](img_4.png)
+
+属性名
+![img_5.png](img_5.png)
+
+**2.解决办法resultMap**
+
+结果集映射
+
+    id   name     password
+    
+    id  username  password
+
+```xml
+<!--namespace=绑定一个对应的Dao/Mapper接口-->
+<mapper namespace="com.shisan.mapper.UserMapper">
+    <resultMap id="userMap" type="user">
+        <result column="id" property="id"/>
+        <result column="name" property="username"/>
+        <result column="password" property="password"/>
+    </resultMap>
+    <!--根据id查询-->
+    <select id="findById" resultMap="userMap">
+        select *
+        from user
+        where id = #{id};
+    </select>
+
+</mapper>
+
+```
+
+- resultMap元素是Mybatis中最重要最强大的元素
+  
+- ResultMap的设计思想，对于简单的语句根本不需要配置显式的结果映射，而对于复杂一点的语句只需要描述它们的关系就行了。
