@@ -495,7 +495,182 @@ public void findLike(){
  }
 ```
 
+## 4.配置解析
 
+**1.核心配置文件**
 
+- mybatis-config.xml
+- Mybatis的配置文件包含了会深深影响Mybatis行为的设置和属性信息
+
+```
+configuration（配置）
+properties（属性）
+settings（设置）
+typeAliases（类型别名）
+typeHandlers（类型处理器）
+objectFactory（对象工厂）
+plugins（插件）
+environments（环境配置）
+environment（环境变量）
+transactionManager（事务管理器）
+dataSource（数据源）
+databaseIdProvider（数据库厂商标识）
+mappers（映射器）
+```
+
+**2.环境配置（environments）**
+
+Mybatis 可以配置成适应多种环境
+
+- 注意：尽管课配置多个环境，但每个SqlSessionFactory实例只能选择一种环境
+
+学会使用配置多套运行环境
+
+Mybatis默认的事务管理器是JDBC 连接池是POOLED
+
+**3.属性（properties）**
+
+我们可以通过properties属性来实现引用配置文件
+
+这些属性可以在外部进行配置，并且可以动态替换。既可以在典型的java属性文件中配置属性，也可以在properties元素的子元素中设置
+
+- db.properties
+
+```properties
+driver=com.mysql.jdbc.Driver
+url=jdbc:mysql://localhost:3306/mybatis?useSSL=false&useUnicode=true&characterEncoding=utf-8
+username=root
+password=root
+```
+
+在核心配置文件中引入
+
+```xml
+<!--引入外部配置文件-->
+<properties resource="db.properties">
+    <property name="username" value="root"/>
+    <property name="password" value="root"/>
+</properties>
+```
+
+- 可以直接引入外部文件
+- 可以在其中增加一些属性配置
+- 如果两个文件有相同字段，会使用外部配置文件（外部配置文件优先级高）
+
+**4.类型别名(typeAliases)**
+
+- 类型别名可为Java类型设置一个缩写名字
+- 仅用于xml配置，意在降低冗余的权限定类名书写
+
+```xml
+<!--可以给实体类起别名-->
+<tAypeAliases>
+    <typeAlias type="com.shisan.pojo.User" alias="User"></typeAlias>
+</typeAliases>
+
+```
+
+也可以指定一个包名，Mybatis会在包名下搜索需要的Java Bean。扫面实体类的包，默认别名是这个类的类名首字母小写
+
+```xml
+<!--可以给实体类起别名-->
+<tAypeAliases>
+    <package name="com.shisan.pojo"></typeAlias>
+</typeAliases>
+
+```
+
+在实体类中比较少的使用，使用第一种（自定义别名）
+
+如果实体类十分多，建议使用第二种（注解）
+
+```properties
+@Alias("user")
+public class User{}
+```
+
+**5.设置（setting）**
+
+这是Mybatis种极为重要的调整设置，会改变Mybatis的运行时行为
+
+![img_2.png](img_2.png)
+
+**6.其他配置**
+
+- typeHandlers（类型处理器）
+- objectFactory（对象工厂）
+- plugins（插件）
+
+    - mybaits-generator-core
+    - mybatis-plus
+    - 通用mapper
+
+**7.mappers（映射器）**
+
+MapperRegistry：注册绑定我们的mapper文件
+
+- 方式一：使用类路径的资源引用
+
+```xml
+<!-- 使用相对于类路径的资源引用 -->
+<mappers>
+    <mapper resource="com/shisan/mapper/UserMapper.xml"/>
+</mappers>
+
+```
+
+- 方式二：使用class文件绑定注册
+
+```xml
+
+<mappers>
+    <mapper class="com.shisan.mapper.UserMapper"/>
+</mappers>
+
+```
+
+注意点：
+
+- 接口和它对应的mapper配置文件必须同名同包
+
+- 方式三：使用扫面包经常注入绑定
+
+```xml
+
+<mappers>
+    <mapper package="com.shisan.mapper"/>
+</mappers>
+
+```
+
+注意点：
+
+- 接口和它对应的mapper配置文件必须同名同包
+
+**8、生命周期和作用域**
+
+生命周期和作用域是至关重要的，因为错误的使用会导致非常严重的并发问题。
+
+- SqlSessionFactoryBuilder：
+
+    - 一旦创建了SqlSessionFactory，就不再需要它了
+    - 局部变量
+
+- SqlSessionFactory：
+
+    - 说白了就是可以想象成：数据库连接池
+    - SqlSessionFactory一旦创建就应该在应用的运行期间一直存在，**没有任何理由丢弃它或重新创建另一个实例。**
+    - 因此SqlSessionFactory的最佳作用域是应用作用域。
+    - 最简单的就是使用单例模式或者静态单例模式 SqlSession：
+
+- SqlSession
+
+    - 连接到连接池的一个请求！
+    - SqlSession的实例不是线程安全的，因此是不能被共享的，所以它的最佳作用域是请求或方法作用域
+    - 用完之后需要赶紧关闭，否则资源被占用！
+
+![img_3.png](img_3.png)
+
+每一个Mapper，就代表一个具体的业务！
 
 

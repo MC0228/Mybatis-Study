@@ -31,15 +31,12 @@
         select *
         from `user`
     </select>
+
     <!--根据id查询-->
     <select id="findById" resultType="com.shisan.pojo.User">
         select *
         from user
         where id = #{id};
-    </select>
-    <select id="findLike" resultType="com.shisan.pojo.User">
-        select *
-        from user where name like concat("%",#{key}, "%");
     </select>
 
 </mapper>
